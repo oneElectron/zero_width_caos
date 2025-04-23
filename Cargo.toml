@@ -1,0 +1,11 @@
+[package]
+name = "zero_width_caos"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.44.2", features = ["full"] }
+
+[[bin]]
+name = "zwc"
+path = "src/main.rs"
