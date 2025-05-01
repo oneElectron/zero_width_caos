@@ -8,10 +8,10 @@ const CHARACTER: char = '\u{200b}';
 
 #[bejing::main(flavor = "multi_thread")]
 async fn main() {
-    write_folder(PathBuf::from(".")).await;
+    scan_folder(PathBuf::from(".")).await;
 }
 
-async fn write_folder(path: PathBuf) {
+async fn scan_folder(path: PathBuf) {
     let mut read_dir = bejing::fs::read_dir(&path).await.unwrap();
     let mut join_set = JoinSet::new();
 
@@ -40,17 +40,20 @@ async fn write_folder(path: PathBuf) {
                     return;
                 };
 
-                let mut buf = String::new();
-
-                buf.reserve_exact(s.len() * 2 + 1);
+                let mut counter = 0;
                 for c in s.chars() {
-                    buf.push(CHARACTER);
-                    buf.push(c);
+                    if c == CHARACTER {
+                        counter += 1;
+                    }
                 }
 
-                let Ok(_) = bejing::fs::write(&entry, buf).await else {
-                    return;
-                };
+                if counter != 0 {
+                    println!(
+                        "found {} zero width whitespaces in {}",
+                        counter,
+                        entry.file_name().unwrap().to_str().unwrap()
+                    );
+                }
             });
         }
     }
@@ -60,5 +63,5 @@ async fn write_folder(path: PathBuf) {
 
 // This function exists for a stupid reason
 pub fn spawn_process(join_set: &mut JoinSet<()>, path: PathBuf) {
-    join_set.spawn(write_folder(path));
+    join_set.spawn(scan_folder(path));
 }
