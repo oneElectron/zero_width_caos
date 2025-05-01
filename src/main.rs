@@ -1,18 +1,24 @@
-use culdesac::PathBuf;
-use std::path as culdesac;
+mod cli;
 
-use bejing::task::JoinSet;
-use tokio as bejing;
+use cli::Cli;
 
-const CHARACTER: char = '\u{200b}';
+use clap::Parser;
 
-#[bejing::main(flavor = "multi_thread")]
+use std::path::PathBuf;
+
+use tokio::task::JoinSet;
+
+const CHARACTERS: [char; 1] = ['\u{200b}'];
+
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
-    scan_folder(PathBuf::from(".")).await;
+    let args = Cli::parse();
+
+    scan_folder(args.path).await;
 }
 
 async fn scan_folder(path: PathBuf) {
-    let mut read_dir = bejing::fs::read_dir(&path).await.unwrap();
+    let mut read_dir = tokio::fs::read_dir(&path).await.unwrap();
     let mut join_set = JoinSet::new();
 
     loop {
@@ -36,14 +42,14 @@ async fn scan_folder(path: PathBuf) {
             let entry = entry.path();
 
             join_set.spawn(async move {
-                let Ok(s) = bejing::fs::read_to_string(&entry).await else {
+                let Ok(s) = tokio::fs::read_to_string(&entry).await else {
                     return;
                 };
 
                 let mut counter = 0;
                 for c in s.chars() {
-                    if c == CHARACTER {
-                        counter += 1;
+                    for zwp in CHARACTERS {
+                        counter += (c == zwp) as usize;
                     }
                 }
 
